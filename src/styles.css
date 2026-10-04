@@ -1,0 +1,122 @@
+:root {
+  --bg: #ffffff;
+  --panel: #f6f7f9;
+  --line: #d9dde3;
+  --text: #1d2128;
+  --muted: #5d6673;
+  --accent: #1d5fb5;
+  --warn: #b3261e;
+  --ok: #1f7a3a;
+  font: 14px/1.4 system-ui, sans-serif;
+  color: var(--text);
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+
+.app {
+  height: 100%;
+  display: grid;
+  grid-template: "top top top" auto "tools stage side" 1fr "status status status" auto / auto 1fr 320px;
+  background: var(--bg);
+}
+
+button, input { font: inherit; color: inherit; }
+button {
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  cursor: pointer;
+}
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: 0.45; cursor: default; }
+button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+kbd { margin-left: 6px; font: 11px ui-monospace, monospace; opacity: 0.65; }
+
+.topbar, .status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--panel);
+}
+.topbar { grid-area: top; border-bottom: 1px solid var(--line); }
+.status { grid-area: status; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; gap: 16px; padding: 5px 12px; }
+.brand { font-size: 16px; }
+.name { width: 220px; padding: 5px 8px; border: 1px solid transparent; border-radius: 6px; background: transparent; }
+.name:hover, .name:focus { border-color: var(--line); background: var(--bg); }
+.grow { flex: 1; }
+.sep { width: 1px; align-self: stretch; background: var(--line); }
+
+.segmented { display: flex; }
+.segmented button { border-radius: 0; margin-left: -1px; flex: 1; }
+.segmented button:first-child { border-radius: 6px 0 0 6px; margin-left: 0; }
+.segmented button:last-child { border-radius: 0 6px 6px 0; }
+
+.tools {
+  grid-area: tools;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 150px;
+  padding: 10px;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+}
+.tools > button { display: flex; justify-content: space-between; align-items: center; }
+.tools label, .sidebar label { margin-top: 8px; font-size: 12px; color: var(--muted); }
+.check { display: flex; gap: 6px; align-items: center; }
+.swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.swatches button { height: 26px; padding: 0; }
+.swatches button.on { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.stage { grid-area: stage; position: relative; min-width: 0; min-height: 0; }
+.empty, .toast, .drop { position: absolute; left: 50%; transform: translateX(-50%); pointer-events: none; }
+.empty { top: 24px; color: var(--muted); }
+.toast {
+  bottom: 20px;
+  max-width: 80%;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #1d2128;
+  color: #fff;
+}
+.drop {
+  inset: 12px;
+  transform: none;
+  display: grid;
+  place-items: center;
+  border: 3px dashed var(--accent);
+  border-radius: 12px;
+  background: rgb(29 95 181 / 0.08);
+  font-size: 22px;
+  color: var(--accent);
+}
+
+.sidebar {
+  grid-area: side;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  overflow-y: auto;
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+}
+.sidebar h2 { margin: 0; font-size: 15px; }
+.sidebar p { margin: 0; }
+.sidebar .row { display: flex; gap: 6px; }
+.sidebar .row button { flex: 1; }
+.stepno { color: var(--muted); }
+.warn { color: var(--warn); }
+.ok { color: var(--ok); }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 4px 2px; text-align: left; border-bottom: 1px solid var(--line); }
+th { font-size: 12px; font-weight: 600; color: var(--muted); }
+tfoot td { font-weight: 600; border-bottom: 0; }
+.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td input[type="number"] { width: 58px; padding: 2px 4px; text-align: right; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); }
+tr.short td { color: var(--warn); }
