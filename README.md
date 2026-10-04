@@ -49,8 +49,17 @@ QDF_SAMPLES_DIR=/pfad/zu/qdf-dateien npm test
 ## Betrieb
 
 ```sh
-docker compose up -d --build   # http://localhost:8080
+APP_VERSION=$(npm run -s app-version) docker compose up -d --build   # http://localhost:8080
 ```
+
+## Versionierung
+
+Die Version in der Fußzeile der App kommt aus git (`npm run -s app-version`):
+
+- sauberer Checkout des Tags `vX.Y.Z` → `X.Y.Z`
+- alles andere → `X.Y.Z-<branch>.<Commits seit letztem Tag>+<commit>[.dirty]`, wobei `X.Y.Z` die Zielversion aus `package.json` ist
+
+Im Docker-Image gibt es kein git, dort wird die Version über `APP_VERSION` hineingereicht.
 
 ## Aufbau
 

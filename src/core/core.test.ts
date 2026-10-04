@@ -100,6 +100,15 @@ describe('panel fixing', () => {
     expect(fixPanels([panel]).unfixed).toEqual(['p']);
   });
 
+  it('waits for a long tube that closes the frame from above', () => {
+    // Two uprights joined at the bottom by a 35 cm tube and at the top by a 75 cm tube running on.
+    const frame = [tube([0, 0, 0], [1, 0, 0]), tube([0, 0, 0], [0, 1, 0]), tube([400, 0, 0], [0, 1, 0]), tube([0, 400, 0], [1, 0, 0], 750)];
+    const cell = panelCells(frame).find((c) => c.w === 350 && c.h === 350)!;
+    const panel: Panel = { id: 'p', type: 'panel', pos: cell.pos, quat: cell.quat, w: 350, h: 350, perforated: false, color: 'red' };
+    const steps = buildSteps([...frame, panel]);
+    expect(steps[steps.length - 1]).toMatchObject({ level: 2, phase: 'panels', partIds: ['p'] });
+  });
+
   it('fits a wall panel only once the frame above closes it in', () => {
     const steps = buildSteps(withPanels(cube(), (pos) => pos[2] === 0));
     expect(steps.map((s) => [s.level, s.phase])).toEqual([

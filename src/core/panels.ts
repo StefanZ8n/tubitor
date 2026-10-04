@@ -18,7 +18,7 @@ const SEARCH_BUDGET = 50000;
 
 export const jointsOf = (tubeIds: string[]) => tubeIds.flatMap((id) => [`${id}:0`, `${id}:1`]);
 
-/** Tubes on the panel's edges, and per side (+x, -x, +y, -y) the tube spanning it corner to corner. */
+/** Tubes along the panel's edges, and per side (+x, -x, +y, -y) the tube spanning it corner to corner. */
 function frameOf(panel: Panel, tubes: { tube: Tube; ends: ReturnType<typeof tubeEnds> }[]) {
   const inverse = quat(panel.quat).invert();
   const center = v3(panel.pos);
@@ -35,10 +35,11 @@ function frameOf(panel: Panel, tubes: { tube: Tube; ends: ReturnType<typeof tube
     for (const axis of [0, 1]) {
       const other = 1 - axis;
       for (const sign of [1, -1]) {
-        const onEdge = local.every(
-          (p) => Math.abs(p[axis] - sign * half[axis]) < TOLERANCE && Math.abs(p[other]) < half[other] + TOLERANCE,
-        );
-        if (!onEdge) continue;
+        const onLine = local.every((p) => Math.abs(p[axis] - sign * half[axis]) < TOLERANCE);
+        // A longer tube may run past the corners; it frames the edge as long as it covers part of it.
+        const from = Math.max(Math.min(local[0][other], local[1][other]), -half[other]);
+        const to = Math.min(Math.max(local[0][other], local[1][other]), half[other]);
+        if (!onLine || to - from < TOLERANCE) continue;
         frame.push(tube.id);
         if (Math.abs(Math.abs(local[0][other] - local[1][other]) - 2 * half[other]) < TOLERANCE) {
           spanning[axis * 2 + (sign > 0 ? 0 : 1)] = tube.id;
