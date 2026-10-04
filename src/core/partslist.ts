@@ -21,8 +21,6 @@ export const CATALOG = [
   'panel-350x350',
   'panel-150x350',
   'panel-350x350-perf',
-  'screw-tube',
-  'screw-panel',
 ] as const;
 
 const SCREWS_PER_PANEL = 4;
@@ -49,34 +47,43 @@ export function partKey(p: Part): string {
 
 export const nodeKey = (n: Node) => (n.kind ? `conn-${n.kind}` : null);
 
-/**
- * Counts `parts`, the connectors at `connectors` and the screws the parts need.
- * `info` describes the whole design when `parts` is only a subset of it.
- * A tube end takes a tube screw wherever it meets a connector or a roof adapter,
- * unless a panel is screwed on there: the panel screw then holds the tube as well.
- */
+/** Counts `parts` and the connectors at `connectors` (by default all the design needs). */
 export function countParts(parts: Part[], info: DesignInfo = analyse(parts), connectors: Node[] = info.nodes): Counts {
   const counts: Counts = {};
-  const add = (k: string | null, n = 1) => {
-    if (k && n) counts[k] = (counts[k] ?? 0) + n;
+  const add = (k: string | null) => {
+    if (k) counts[k] = (counts[k] ?? 0) + 1;
   };
+  parts.forEach((p) => add(partKey(p)));
+  connectors.forEach((n) => add(nodeKey(n)));
+  return counts;
+}
+
+export interface Screws {
+  tube: number;
+  panel: number;
+}
+
+/**
+ * Screws `parts` need; `info` describes the whole design when `parts` is only a subset of it.
+ * A tube end takes a tube screw wherever it meets a connector or a roof adapter,
+ * unless a panel is screwed on there: the panel screw then holds the tube as well.
+ * Screws are extra information, not part of the parts list.
+ */
+export function countScrews(parts: Part[], info: DesignInfo = analyse(parts)): Screws {
   const byKey = new Map(info.nodes.map((n) => [n.key, n]));
   // Tube ends without a node sit on a roof adapter, which is screwed as well.
   const isJoint = (key: string) => !byKey.has(key) || !!byKey.get(key)!.kind;
-
+  const screws: Screws = { tube: 0, panel: 0 };
   for (const p of parts) {
-    add(partKey(p));
     if (p.type === 'tube') {
-      const free = tubeEnds(p).filter((end, i) => isJoint(posKey(end)) && !info.fixing.panelJoints.has(`${p.id}:${i}`));
-      add('screw-tube', free.length);
+      screws.tube += tubeEnds(p).filter((end, i) => isJoint(posKey(end)) && !info.fixing.panelJoints.has(`${p.id}:${i}`)).length;
     } else if (p.type === 'roof45') {
-      add('screw-tube', isJoint(posKey(roofGeometry(p).node)) ? 1 : 0);
+      screws.tube += isJoint(posKey(roofGeometry(p).node)) ? 1 : 0;
     } else if (info.fixing.fixedTo.has(p.id)) {
-      add('screw-panel', SCREWS_PER_PANEL);
+      screws.panel += SCREWS_PER_PANEL;
     }
   }
-  connectors.forEach((n) => add(nodeKey(n)));
-  return counts;
+  return screws;
 }
 
 export function orderedKeys(...counts: Counts[]): string[] {
@@ -85,14 +92,11 @@ export function orderedKeys(...counts: Counts[]): string[] {
   return [...CATALOG, ...[...extra].sort()];
 }
 
-/** Screws are not in imported stock lists: they only count as stock once a number is entered. */
-export const isTracked = (key: string, have: Counts) => !key.startsWith('screw-') || (have[key] ?? 0) > 0;
-
 export function missingParts(used: Counts, have: Counts): Counts {
   const missing: Counts = {};
   for (const [k, n] of Object.entries(used)) {
     const short = n - (have[k] ?? 0);
-    if (short > 0 && isTracked(k, have)) missing[k] = short;
+    if (short > 0) missing[k] = short;
   }
   return missing;
 }

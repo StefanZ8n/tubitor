@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { autoColor } from '../core/autocolor';
 import { TUBE_LENGTHS } from '../core/geometry';
+import { fixPanels } from '../core/panels';
 import { parseQbl } from '../core/qbl';
 import { parseQdf } from '../core/qdf';
 import { COLORS, emptyDesign, type Design } from '../core/types';
@@ -156,6 +158,7 @@ export function App() {
         <button disabled={!s.future.length} onClick={s.redo} title="Ctrl+Y">{t('redo')}</button>
         <span className="sep" />
         <button onClick={() => s.set({ fitVersion: s.fitVersion + 1 })} title={t('fitHint')}>{t('fit')}</button>
+        <button disabled={!s.design.parts.length} onClick={() => s.replaceParts(autoColor(s.design.parts, fixPanels(s.design.parts)))} title={t('autoColorHint')}>{t('autoColor')}</button>
         <span className="grow" />
         <div className="segmented">
           <button className={building ? 'on' : ''} onClick={() => s.set({ view: 'build' })}>{t('build')}</button>

@@ -9,7 +9,8 @@ Version 0.1.0 läuft komplett im Browser, ohne Backend.
 
 - 3D-Editor im 20-cm-Raster: Rohre (75, 35 und 15 cm), Platten, halbe Platten, Lochplatten
 - Kupplungen werden automatisch aus den Rohren berechnet (Raum 3–6, Fläche 2–4)
-- Teileliste inklusive Rohr- und Plattenschrauben, eigene Teileliste mit Fehlteilen, optional nur vorhandene Teile zulassen
+- Auto-Farbe: färbt Rohre und Platten zufällig in den vier Grundfarben ein
+- Teileliste (Schrauben als Zusatzinfo), eigene Teileliste mit Fehlteilen, optional nur vorhandene Teile zulassen
 - Platten werden kollisionsfrei an zwei gegenüberliegenden Rohren verschraubt, die Plattenschraube ersetzt dort die Rohrschraube
 - Bauplan Schritt für Schritt, Ebene für Ebene; Platten erst, wenn ihr Rahmen geschlossen ist
 - Import der Bestandsliste (`.qbl`) aus dem QUADRO 3D-Programm als eigene Teileliste

@@ -1,9 +1,10 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { autoColor, AUTO_COLORS } from './autocolor';
 import { deriveNodes, occupiedEdges, panelCells, posKey, quatFromDir, tubeEnds, v3 } from './geometry';
 import { fixPanels, jointsOf } from './panels';
-import { countParts, missingParts } from './partslist';
+import { countParts, countScrews, missingParts } from './partslist';
 import { parseQbl } from './qbl';
 import { parseQdf } from './qdf';
 import { buildSteps, nodeSteps } from './steps';
@@ -37,7 +38,8 @@ describe('geometry', () => {
 
   it('derives corner connectors for a cube', () => {
     const counts = countParts(cube());
-    expect(counts).toEqual({ 'tube-350': 12, 'conn-c3': 8, 'screw-tube': 24 });
+    expect(counts).toEqual({ 'tube-350': 12, 'conn-c3': 8 });
+    expect(countScrews(cube())).toEqual({ tube: 24, panel: 0 });
   });
 
   it('tells flat from spatial connectors', () => {
@@ -78,9 +80,8 @@ function withPanels(parts: Part[], pick: (pos: Vec3) => boolean): Part[] {
 describe('panel fixing', () => {
   it('lets panel screws replace the tube screws they pass through', () => {
     const parts = withPanels(cube(), (pos) => pos[2] === 0);
-    const counts = countParts(parts);
-    expect(counts['screw-panel']).toBe(4);
-    expect(counts['screw-tube']).toBe(20);
+    expect(countScrews(parts)).toEqual({ tube: 20, panel: 4 });
+    expect(countParts(parts)).toEqual({ 'tube-350': 12, 'conn-c3': 8, 'panel-350x350': 1 });
   });
 
   it('screws neighbouring panels to different tube ends', () => {
@@ -121,6 +122,19 @@ describe('panel fixing', () => {
   });
 });
 
+describe('auto colour', () => {
+  it('never gives all tubes at a connector the same colour', () => {
+    const parts = withPanels(cube(), (pos) => pos[2] === 0);
+    const colored = autoColor(parts, fixPanels(parts));
+    expect(colored.every((p) => AUTO_COLORS.includes(p.color))).toBe(true);
+    expect(colored.map((p) => p.id)).toEqual(parts.map((p) => p.id));
+    for (const node of deriveNodes(colored)) {
+      const tubes = colored.filter((p) => p.type === 'tube' && tubeEnds(p).some((e) => posKey(e) === node.key));
+      expect(new Set(tubes.map((t) => t.color)).size).toBeGreaterThan(1);
+    }
+  });
+});
+
 describe('parts and steps', () => {
   it('lists missing parts', () => {
     expect(missingParts({ 'tube-350': 12, 'conn-c3': 8 }, { 'tube-350': 20, 'conn-c3': 5 })).toEqual({ 'conn-c3': 3 });
@@ -146,8 +160,8 @@ describe('parts and steps', () => {
   it('counts screws only where a tube meets a connector', () => {
     const upright = tube([0, 0, 0], [0, 1, 0]);
     const flat = tube([0, 0, 0], [1, 0, 0]);
-    expect(countParts([upright])['screw-tube']).toBeUndefined();
-    expect(countParts([upright, flat])['screw-tube']).toBe(2);
+    expect(countScrews([upright]).tube).toBe(0);
+    expect(countScrews([upright, flat]).tube).toBe(2);
   });
 });
 
@@ -158,11 +172,6 @@ describe('stock list import', () => {
       inventory: { 'conn-c6': 8, 'conn-f3': 32, 'conn-f2': 3, roof45: 8, 'tube-350': 264, 'panel-150x350': 14 },
       skipped: { 'multi wheel': 2 },
     });
-  });
-
-  it('leaves screws out of the missing parts until a stock is entered', () => {
-    expect(missingParts({ 'screw-tube': 24 }, {})).toEqual({});
-    expect(missingParts({ 'screw-tube': 24 }, { 'screw-tube': 10 })).toEqual({ 'screw-tube': 14 });
   });
 });
 

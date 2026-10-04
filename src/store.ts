@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { countParts, isTracked, type Counts } from './core/partslist';
+import { countParts, type Counts } from './core/partslist';
 import { emptyDesign, type ColorKey, type Design, type Part, type Vec3 } from './core/types';
 import type { Lang } from './i18n';
 
@@ -59,6 +59,8 @@ interface State extends Prefs {
   /** Returns the catalogue key of the part that blocked the change in strict mode, if any. */
   addPart: (part: Part) => string | null;
   removeParts: (ids: string[]) => void;
+  /** Replaces all parts as one undoable change. */
+  replaceParts: (parts: Part[]) => void;
   undo: () => void;
   redo: () => void;
   loadDesign: (design: Design) => void;
@@ -105,13 +107,14 @@ export const useStore = create<State>((set, get) => {
         const before = countParts(design.parts);
         const after = countParts(parts);
         const short = Object.keys(after).find(
-          (k) => after[k] > (before[k] ?? 0) && after[k] > (inventory[k] ?? 0) && isTracked(k, inventory),
+          (k) => after[k] > (before[k] ?? 0) && after[k] > (inventory[k] ?? 0),
         );
         if (short) return short;
       }
       commit(parts);
       return null;
     },
+    replaceParts: (parts) => commit(parts),
     removeParts: (ids) => {
       const drop = new Set(ids);
       const { design, selection } = get();

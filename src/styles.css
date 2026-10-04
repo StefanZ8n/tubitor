@@ -110,6 +110,7 @@ kbd { margin-left: 6px; font: 11px ui-monospace, monospace; opacity: 0.65; }
 .sidebar .row { display: flex; gap: 6px; }
 .sidebar .row button { flex: 1; }
 .stepno { color: var(--muted); }
+.note { color: var(--muted); font-size: 12px; }
 .warn { color: var(--warn); }
 .ok { color: var(--ok); }
 

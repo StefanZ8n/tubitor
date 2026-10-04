@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { analyse, countParts } from '../core/partslist';
+import { analyse, countParts, countScrews } from '../core/partslist';
 import { buildSteps, nodeSteps } from '../core/steps';
 import { useStore } from '../store';
 
@@ -24,11 +24,13 @@ export function usePlan() {
       if (at <= index) shownNodes.add(key);
       if (at === index) currentNodes.add(key);
     }
+    const stepParts = parts.filter((p) => current.has(p.id));
+    const stepScrews = countScrews(stepParts, info);
     const stepCounts = countParts(
-      parts.filter((p) => current.has(p.id)),
+      stepParts,
       info,
       nodes.filter((n) => currentNodes.has(n.key)),
     );
-    return { info, nodes, fixing, steps, index, step, shown, current, shownNodes, currentNodes, stepCounts };
+    return { info, nodes, fixing, steps, index, step, shown, current, shownNodes, currentNodes, stepCounts, stepScrews };
   }, [parts, info, nodes, fixing, steps, nodeStep, planStep]);
 }

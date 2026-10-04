@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { countParts, missingParts, orderedKeys, type Counts } from '../core/partslist';
+import { countParts, countScrews, missingParts, orderedKeys, type Counts, type Screws } from '../core/partslist';
 import { partLabel, translate, type MsgKey } from '../i18n';
 import { useStore } from '../store';
 import { usePlan } from './usePlan';
@@ -13,10 +13,12 @@ export function Sidebar() {
   const t = (k: MsgKey, vars?: Record<string, string | number>) => translate(s.lang, k, vars);
   const used = useMemo(() => countParts(s.design.parts, plan.info), [s.design.parts, plan.info]);
   const unfixed = plan.fixing.unfixed.length;
+  const screws = useMemo(() => countScrews(s.design.parts, plan.info), [s.design.parts, plan.info]);
+  const screwInfo = (n: Screws) => (n.tube + n.panel > 0 ? <p className="note">{t('screws', { tube: n.tube, panel: n.panel })}</p> : null);
   const invalid = plan.nodes.filter((n) => n.invalid).length;
 
   if (s.view === 'plan') {
-    const { steps, index, step, stepCounts } = plan;
+    const { steps, index, step, stepCounts, stepScrews } = plan;
     return (
       <aside className="sidebar">
         <h2>{t('plan')}</h2>
@@ -43,6 +45,7 @@ export function Sidebar() {
                 ))}
               </tbody>
             </table>
+            {screwInfo(stepScrews)}
           </>
         ) : (
           <p>{t('empty')}</p>
@@ -103,6 +106,7 @@ export function Sidebar() {
           </tr>
         </tfoot>
       </table>
+      {screwInfo(screws)}
     </aside>
   );
 }
