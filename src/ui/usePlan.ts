@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
-import { deriveNodes } from '../core/geometry';
-import { countParts } from '../core/partslist';
+import { analyse, countParts } from '../core/partslist';
 import { buildSteps, nodeSteps } from '../core/steps';
 import { useStore } from '../store';
 
@@ -9,8 +8,9 @@ export function usePlan() {
   const parts = useStore((s) => s.design.parts);
   const planStep = useStore((s) => s.planStep);
 
-  const nodes = useMemo(() => deriveNodes(parts), [parts]);
-  const steps = useMemo(() => buildSteps(parts), [parts]);
+  const info = useMemo(() => analyse(parts), [parts]);
+  const { nodes, fixing } = info;
+  const steps = useMemo(() => buildSteps(parts, fixing), [parts, fixing]);
   const nodeStep = useMemo(() => nodeSteps(parts, steps), [parts, steps]);
 
   return useMemo(() => {
@@ -26,9 +26,9 @@ export function usePlan() {
     }
     const stepCounts = countParts(
       parts.filter((p) => current.has(p.id)),
+      info,
       nodes.filter((n) => currentNodes.has(n.key)),
-      nodes,
     );
-    return { nodes, steps, index, step, shown, current, shownNodes, currentNodes, stepCounts };
-  }, [parts, nodes, steps, nodeStep, planStep]);
+    return { info, nodes, fixing, steps, index, step, shown, current, shownNodes, currentNodes, stepCounts };
+  }, [parts, info, nodes, fixing, steps, nodeStep, planStep]);
 }

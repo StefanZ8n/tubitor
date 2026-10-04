@@ -70,6 +70,7 @@ function useShortcuts() {
         return;
       }
       if (s.view === 'plan') {
+        if (key === 'home' || key === 'h') s.set({ fitVersion: s.fitVersion + 1 });
         if (key === 'arrowright') s.set({ planStep: s.planStep + 1 });
         if (key === 'arrowleft') s.set({ planStep: Math.max(0, s.planStep - 1) });
         return;
@@ -79,6 +80,7 @@ function useShortcuts() {
       else if (['1', '2', '3'].includes(key)) s.set({ tubeLength: TUBE_LENGTHS[Number(key) - 1] });
       else if (key === 'r') s.set({ groundDir: (s.groundDir + 1) % GROUND_DIRS.length });
       else if (key === 'escape') s.select(null);
+      else if (key === 'home' || key === 'h') s.set({ fitVersion: s.fitVersion + 1 });
       else if (key === 'delete' || key === 'backspace') s.removeParts(s.selection);
     };
     window.addEventListener('keydown', onKey);
@@ -140,6 +142,8 @@ export function App() {
         <span className="sep" />
         <button disabled={!s.past.length} onClick={s.undo} title="Ctrl+Z">{t('undo')}</button>
         <button disabled={!s.future.length} onClick={s.redo} title="Ctrl+Y">{t('redo')}</button>
+        <span className="sep" />
+        <button onClick={() => s.set({ fitVersion: s.fitVersion + 1 })} title={t('fitHint')}>{t('fit')}</button>
         <span className="grow" />
         <div className="segmented">
           <button className={building ? 'on' : ''} onClick={() => s.set({ view: 'build' })}>{t('build')}</button>

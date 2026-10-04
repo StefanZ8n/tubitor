@@ -1,4 +1,5 @@
 import { deriveNodes, posKey, roofGeometry, tubeEnds } from './geometry';
+import { fixPanels, type PanelFixing } from './panels';
 import type { Node, Part } from './types';
 
 export type Counts = Record<string, number>;
@@ -26,6 +27,16 @@ export const CATALOG = [
 
 const SCREWS_PER_PANEL = 4;
 
+/** What follows from a whole design: where connectors sit and how panels are screwed on. */
+export interface DesignInfo {
+  nodes: Node[];
+  fixing: PanelFixing;
+}
+
+export function analyse(parts: Part[]): DesignInfo {
+  return { nodes: deriveNodes(parts), fixing: fixPanels(parts) };
+}
+
 export function partKey(p: Part): string {
   if (p.type === 'tube') return `tube-${Math.round(p.length)}`;
   if (p.type === 'panel') return `panel-${Math.round(p.w)}x${Math.round(p.h)}${p.perforated ? '-perf' : ''}`;
@@ -35,26 +46,32 @@ export function partKey(p: Part): string {
 export const nodeKey = (n: Node) => (n.kind ? `conn-${n.kind}` : null);
 
 /**
- * Counts `parts`, the connectors at `nodes` and the screws the parts need.
- * `allNodes` is the whole design's node list when `parts` is only a subset of it:
- * a tube end needs a screw wherever it meets a connector or a roof adapter.
+ * Counts `parts`, the connectors at `connectors` and the screws the parts need.
+ * `info` describes the whole design when `parts` is only a subset of it.
+ * A tube end takes a tube screw wherever it meets a connector or a roof adapter,
+ * unless a panel is screwed on there: the panel screw then holds the tube as well.
  */
-export function countParts(parts: Part[], nodes: Node[] = deriveNodes(parts), allNodes: Node[] = nodes): Counts {
+export function countParts(parts: Part[], info: DesignInfo = analyse(parts), connectors: Node[] = info.nodes): Counts {
   const counts: Counts = {};
   const add = (k: string | null, n = 1) => {
     if (k && n) counts[k] = (counts[k] ?? 0) + n;
   };
-  const byKey = new Map(allNodes.map((n) => [n.key, n]));
+  const byKey = new Map(info.nodes.map((n) => [n.key, n]));
   // Tube ends without a node sit on a roof adapter, which is screwed as well.
-  const joints = (keys: string[]) => keys.filter((k) => !byKey.has(k) || byKey.get(k)!.kind).length;
+  const isJoint = (key: string) => !byKey.has(key) || !!byKey.get(key)!.kind;
 
   for (const p of parts) {
     add(partKey(p));
-    if (p.type === 'tube') add('screw-tube', joints(tubeEnds(p).map(posKey)));
-    else if (p.type === 'roof45') add('screw-tube', joints([posKey(roofGeometry(p).node)]));
-    else add('screw-panel', SCREWS_PER_PANEL);
+    if (p.type === 'tube') {
+      const free = tubeEnds(p).filter((end, i) => isJoint(posKey(end)) && !info.fixing.panelJoints.has(`${p.id}:${i}`));
+      add('screw-tube', free.length);
+    } else if (p.type === 'roof45') {
+      add('screw-tube', isJoint(posKey(roofGeometry(p).node)) ? 1 : 0);
+    } else if (info.fixing.fixedTo.has(p.id)) {
+      add('screw-panel', SCREWS_PER_PANEL);
+    }
   }
-  nodes.forEach((n) => add(nodeKey(n)));
+  connectors.forEach((n) => add(nodeKey(n)));
   return counts;
 }
 

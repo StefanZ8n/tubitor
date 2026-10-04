@@ -2,10 +2,11 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { deriveNodes, occupiedEdges, panelCells, posKey, quatFromDir, tubeEnds, v3 } from './geometry';
+import { fixPanels, jointsOf } from './panels';
 import { countParts, missingParts } from './partslist';
 import { parseQdf } from './qdf';
 import { buildSteps, nodeSteps } from './steps';
-import { newId, type Part, type Tube, type Vec3 } from './types';
+import { newId, type Panel, type Part, type Tube, type Vec3 } from './types';
 
 const tube = (pos: Vec3, dir: Vec3, length = 350): Tube => ({
   id: newId(),
@@ -62,6 +63,51 @@ describe('geometry', () => {
 
   it('tracks occupied grid edges', () => {
     expect(occupiedEdges([tube([0, 0, 0], [1, 0, 0]), tube([0, 0, 0], [0, 1, 0], 150)]).size).toBe(3);
+  });
+});
+
+/** Fills the panel cells of `parts` picked by `pick`. */
+function withPanels(parts: Part[], pick: (pos: Vec3) => boolean): Part[] {
+  const panels: Panel[] = panelCells(parts)
+    .filter((c) => pick(c.pos.map((v) => Math.round(v) + 0) as Vec3))
+    .map((c) => ({ id: newId(), type: 'panel', pos: c.pos, quat: c.quat, w: c.w, h: c.h, perforated: false, color: 'blue' }));
+  return [...parts, ...panels];
+}
+
+describe('panel fixing', () => {
+  it('lets panel screws replace the tube screws they pass through', () => {
+    const parts = withPanels(cube(), (pos) => pos[2] === 0);
+    const counts = countParts(parts);
+    expect(counts['screw-panel']).toBe(4);
+    expect(counts['screw-tube']).toBe(20);
+  });
+
+  it('screws neighbouring panels to different tube ends', () => {
+    // Two cubes side by side with the three panels of the shared front wall and the wall between them.
+    const second = cube().map((p) => ({ ...p, id: newId(), pos: [p.pos[0] + 400, p.pos[1], p.pos[2]] as Vec3 }));
+    const frame = [...cube(), ...second.filter((t) => !(t.pos[0] === 400 && tubeEnds(t as Tube)[1].x === 400))];
+    const parts = withPanels(frame, (pos) => pos[2] === 0 || pos[0] === 400);
+    const fixing = fixPanels(parts);
+    expect(fixing.unfixed).toEqual([]);
+    expect(fixing.fixedTo.size).toBe(3);
+    const joints = [...fixing.fixedTo.values()].flatMap(jointsOf);
+    expect(new Set(joints).size).toBe(joints.length);
+  });
+
+  it('reports a panel that has no pair of opposite tubes', () => {
+    const cell = panelCells([tube([0, 0, 0], [1, 0, 0]), tube([0, 400, 0], [1, 0, 0])])[0];
+    const panel: Panel = { id: 'p', type: 'panel', pos: cell.pos, quat: cell.quat, w: 350, h: 350, perforated: false, color: 'red' };
+    expect(fixPanels([panel]).unfixed).toEqual(['p']);
+  });
+
+  it('fits a wall panel only once the frame above closes it in', () => {
+    const steps = buildSteps(withPanels(cube(), (pos) => pos[2] === 0));
+    expect(steps.map((s) => [s.level, s.phase])).toEqual([
+      [0, 'horizontal'],
+      [0, 'upright'],
+      [2, 'horizontal'],
+      [2, 'panels'],
+    ]);
   });
 });
 

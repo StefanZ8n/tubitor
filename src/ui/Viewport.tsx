@@ -39,6 +39,20 @@ const PANEL_THICKNESS = 8;
 // Mouse travel in pixels below which a press still counts as a click, not a camera drag.
 const CLICK_SLOP = 4;
 
+// Direction the home view looks from: the classic isometric corner.
+const HOME_DIRECTION = new Vector3(1, 1, 1).normalize();
+const SCREW = '#e4e7ea';
+
+// Modifier state from the keyboard, for pointer events that arrive without it.
+const held = { add: false };
+if (typeof window !== 'undefined') {
+  const track = (e: KeyboardEvent) => (held.add = e.shiftKey || e.ctrlKey || e.metaKey);
+  window.addEventListener('keydown', track, true);
+  window.addEventListener('keyup', track, true);
+  window.addEventListener('blur', () => (held.add = false));
+}
+const adding = (e: MouseEvent) => held.add || e.shiftKey || e.ctrlKey || e.metaKey;
+
 const Y = new Vector3(0, 1, 0);
 const Y_TO_X = new Quaternion().setFromUnitVectors(Y, new Vector3(1, 0, 0));
 const alongY = (dir: Vector3) => new Quaternion().setFromUnitVectors(Y, dir);
@@ -153,6 +167,22 @@ function ConnectorMesh({ node, faded }: { node: Node; faded: boolean }) {
   );
 }
 
+/** Heads of the screws that hold a panel to its two tubes, one near each tube end. */
+function PanelScrews({ panel, tubes }: { panel: Panel; tubes: Tube[] }) {
+  const normal = new Vector3(0, 0, 1).applyQuaternion(quat(panel.quat));
+  return (
+    <>
+      {tubes.flatMap((tube) => {
+        const [start, end] = tubeEnds(tube);
+        const dir = end.clone().sub(start).normalize();
+        return [start.clone().addScaledVector(dir, HUB / 2 + 12), end.clone().addScaledVector(dir, -HUB / 2 - 12)].map((at, i) => (
+          <Rod key={`${tube.id}:${i}`} from={at.clone().addScaledVector(normal, -24)} to={at.clone().addScaledVector(normal, 24)} radius={6} look={{ color: SCREW }} />
+        ));
+      })}
+    </>
+  );
+}
+
 interface TubeCandidate {
   tube: Tube;
   valid: boolean;
@@ -174,7 +204,7 @@ function CameraFit() {
     const center = box.getCenter(new Vector3());
     const radius = Math.max(box.getSize(new Vector3()).length() / 2, 600);
     controls.target.copy(center);
-    camera.position.copy(center).add(new Vector3(1, 0.75, 1.2).normalize().multiplyScalar(radius * 3));
+    camera.position.copy(center).add(HOME_DIRECTION.clone().multiplyScalar(radius * 3));
     controls.update();
   }, [fitVersion, controls, camera]);
   return null;
@@ -274,9 +304,8 @@ function Scene() {
       onClick: (e) => {
         e.stopPropagation();
         if (e.delta > CLICK_SLOP) return;
-        const native = e.nativeEvent;
         if (tool === 'erase') useStore.getState().removeParts([p.id]);
-        else useStore.getState().select(p.id, native.shiftKey || native.ctrlKey || native.metaKey);
+        else useStore.getState().select(p.id, adding(e.nativeEvent));
       },
       onPointerOver: (e) => {
         e.stopPropagation();
@@ -289,11 +318,12 @@ function Scene() {
   const lookOf = (p: Part): Look => {
     if (!building) return { color: plan.current.has(p.id) ? HEX[p.color] : FADED };
     if (hoverPart === p.id) return { color: HEX[p.color], emissive: tool === 'erase' ? '#ff2020' : HIGHLIGHT };
-    if (selection.includes(p.id)) return { color: HEX[p.color], emissive: HIGHLIGHT };
+    if (selection.includes(p.id)) return { color: HIGHLIGHT, emissive: HIGHLIGHT };
     return { color: HEX[p.color] };
   };
 
   const visibleParts = building ? parts : parts.filter((p) => plan.shown.has(p.id));
+  const tubeById = useMemo(() => new Map(parts.filter((p): p is Tube => p.type === 'tube').map((t) => [t.id, t])), [parts]);
   const visibleNodes = building ? nodes : nodes.filter((n) => plan.shownNodes.has(n.key));
 
   return (
@@ -307,6 +337,10 @@ function Scene() {
           <RoofMesh key={p.id} roof={p} look={lookOf(p)} events={partEvents(p)} />
         ),
       )}
+      {visibleParts.map((p) => {
+        const fixedTo = p.type === 'panel' && plan.fixing.fixedTo.get(p.id);
+        return fixedTo ? <PanelScrews key={`s${p.id}`} panel={p} tubes={fixedTo.map((id) => tubeById.get(id)!)} /> : null;
+      })}
       {visibleNodes.map((n) => (n.kind || n.invalid ? <ConnectorMesh key={n.key} node={n} faded={!building && !plan.currentNodes.has(n.key)} /> : null))}
 
       {building && tool === 'tube' && (
@@ -362,7 +396,7 @@ export function Viewport() {
       onPointerMissed={(e) => {
         // Clicking empty space clears the selection, but not while adding to it or after a camera drag.
         const dragged = Math.hypot(e.clientX - press.current.x, e.clientY - press.current.y) > CLICK_SLOP;
-        if (e.button === 0 && !dragged && !e.shiftKey && !e.ctrlKey && !e.metaKey) useStore.getState().select(null);
+        if (e.button === 0 && !dragged && !adding(e)) useStore.getState().select(null);
       }}
     >
       <color attach="background" args={['#eef1f5']} />

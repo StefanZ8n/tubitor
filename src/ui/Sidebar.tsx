@@ -11,7 +11,8 @@ export function Sidebar() {
   const s = useStore();
   const plan = usePlan();
   const t = (k: MsgKey, vars?: Record<string, string | number>) => translate(s.lang, k, vars);
-  const used = useMemo(() => countParts(s.design.parts, plan.nodes), [s.design.parts, plan.nodes]);
+  const used = useMemo(() => countParts(s.design.parts, plan.info), [s.design.parts, plan.info]);
+  const unfixed = plan.fixing.unfixed.length;
   const invalid = plan.nodes.filter((n) => n.invalid).length;
 
   if (s.view === 'plan') {
@@ -69,6 +70,7 @@ export function Sidebar() {
         </>
       )}
       {invalid > 0 && <p className="warn">{t('invalidNodes', { n: invalid })}</p>}
+      {unfixed > 0 && <p className="warn">{t('unfixedPanels', { n: unfixed })}</p>}
       <table>
         <thead>
           <tr>

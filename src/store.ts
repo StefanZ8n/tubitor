@@ -66,7 +66,7 @@ interface State extends Prefs {
   select: (id: string | null, additive?: boolean) => void;
   setInventory: (key: string, n: number) => void;
   setPrefs: (prefs: Partial<Prefs>) => void;
-  set: (patch: Partial<Pick<State, 'tool' | 'tubeLength' | 'color' | 'perforated' | 'groundDir' | 'view' | 'planStep' | 'toast'>>) => void;
+  set: (patch: Partial<Pick<State, 'tool' | 'tubeLength' | 'color' | 'perforated' | 'groundDir' | 'view' | 'planStep' | 'toast' | 'fitVersion'>>) => void;
 }
 
 const defaultLang: Lang = typeof navigator !== 'undefined' && navigator.language.startsWith('de') ? 'de' : 'en';

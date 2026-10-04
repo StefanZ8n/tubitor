@@ -9,8 +9,9 @@ Version 0.1.0 läuft komplett im Browser, ohne Backend.
 
 - 3D-Editor im 20-cm-Raster: Rohre (75, 35 und 15 cm), Platten, halbe Platten, Lochplatten
 - Kupplungen werden automatisch aus den Rohren berechnet (Raum 3–6, Fläche 2–4)
-- Teileliste inklusive Schrauben, eigene Teileliste mit Fehlteilen, optional nur vorhandene Teile zulassen
-- Bauplan Schritt für Schritt, Ebene für Ebene
+- Teileliste inklusive Rohr- und Plattenschrauben, eigene Teileliste mit Fehlteilen, optional nur vorhandene Teile zulassen
+- Platten werden kollisionsfrei an zwei gegenüberliegenden Rohren verschraubt, die Plattenschraube ersetzt dort die Rohrschraube
+- Bauplan Schritt für Schritt, Ebene für Ebene; Platten erst, wenn ihr Rahmen geschlossen ist
 - QDF-Import (Rohre, Platten, 45°-Dachkupplungen; Spezialteile werden übersprungen und gemeldet)
 - Speichern im Browser und als Datei (`.tubecraft.json`), Rückgängig/Wiederholen, Deutsch/Englisch
 
@@ -21,6 +22,7 @@ Version 0.1.0 läuft komplett im Browser, ohne Backend.
 | `V` `T` `P` `E` | Auswählen, Rohr, Platte, Löschen |
 | `1` `2` `3` | Rohrlänge 35 / 15 / 75 cm |
 | `R` | Richtung neuer Rohre am Boden drehen |
+| `Pos1` oder `H` | Kamera auf das ganze Modell ausrichten |
 | `Entf` | Auswahl löschen |
 | Rechtsklick | Teil unter dem Mauszeiger löschen |
 | `Umschalt`+Klick | Mehrere Teile auswählen |
