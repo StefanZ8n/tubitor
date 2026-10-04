@@ -12,6 +12,7 @@ Version 0.1.0 läuft komplett im Browser, ohne Backend.
 - Teileliste inklusive Rohr- und Plattenschrauben, eigene Teileliste mit Fehlteilen, optional nur vorhandene Teile zulassen
 - Platten werden kollisionsfrei an zwei gegenüberliegenden Rohren verschraubt, die Plattenschraube ersetzt dort die Rohrschraube
 - Bauplan Schritt für Schritt, Ebene für Ebene; Platten erst, wenn ihr Rahmen geschlossen ist
+- Import der Bestandsliste (`.qbl`) aus dem QUADRO 3D-Programm als eigene Teileliste
 - QDF-Import (Rohre, Platten, 45°-Dachkupplungen; Spezialteile werden übersprungen und gemeldet)
 - Speichern im Browser und als Datei (`.tubecraft.json`), Rückgängig/Wiederholen, Deutsch/Englisch
 

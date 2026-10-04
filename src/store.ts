@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { countParts, type Counts } from './core/partslist';
+import { countParts, isTracked, type Counts } from './core/partslist';
 import { emptyDesign, type ColorKey, type Design, type Part, type Vec3 } from './core/types';
 import type { Lang } from './i18n';
 
@@ -65,6 +65,7 @@ interface State extends Prefs {
   setName: (name: string) => void;
   select: (id: string | null, additive?: boolean) => void;
   setInventory: (key: string, n: number) => void;
+  replaceInventory: (inventory: Counts) => void;
   setPrefs: (prefs: Partial<Prefs>) => void;
   set: (patch: Partial<Pick<State, 'tool' | 'tubeLength' | 'color' | 'perforated' | 'groundDir' | 'view' | 'planStep' | 'toast' | 'fitVersion'>>) => void;
 }
@@ -104,7 +105,7 @@ export const useStore = create<State>((set, get) => {
         const before = countParts(design.parts);
         const after = countParts(parts);
         const short = Object.keys(after).find(
-          (k) => after[k] > (before[k] ?? 0) && after[k] > (inventory[k] ?? 0),
+          (k) => after[k] > (before[k] ?? 0) && after[k] > (inventory[k] ?? 0) && isTracked(k, inventory),
         );
         if (short) return short;
       }
@@ -149,6 +150,10 @@ export const useStore = create<State>((set, get) => {
     },
     setInventory: (key, n) => {
       const inventory = { ...get().inventory, [key]: Math.max(0, Math.floor(n) || 0) };
+      save(INVENTORY_KEY, inventory);
+      set({ inventory });
+    },
+    replaceInventory: (inventory) => {
       save(INVENTORY_KEY, inventory);
       set({ inventory });
     },

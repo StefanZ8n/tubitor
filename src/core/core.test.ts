@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { deriveNodes, occupiedEdges, panelCells, posKey, quatFromDir, tubeEnds, v3 } from './geometry';
 import { fixPanels, jointsOf } from './panels';
 import { countParts, missingParts } from './partslist';
+import { parseQbl } from './qbl';
 import { parseQdf } from './qdf';
 import { buildSteps, nodeSteps } from './steps';
 import { newId, type Panel, type Part, type Tube, type Vec3 } from './types';
@@ -147,6 +148,21 @@ describe('parts and steps', () => {
     const flat = tube([0, 0, 0], [1, 0, 0]);
     expect(countParts([upright])['screw-tube']).toBeUndefined();
     expect(countParts([upright, flat])['screw-tube']).toBe(2);
+  });
+});
+
+describe('stock list import', () => {
+  it('maps part names, adds up colours and reports unknown parts', () => {
+    const text = ['6way connector, black;8', 'T connector, black;32', 'elbow, black;3', 'diagonal connector, black;8', 'tube, 35 cm, red;260', 'tube, 35 cm, blue;4', 'panel, for 15 cm x 35 cm, red;14', 'multi wheel, red;2'].join('\r\n');
+    expect(parseQbl(text)).toEqual({
+      inventory: { 'conn-c6': 8, 'conn-f3': 32, 'conn-f2': 3, roof45: 8, 'tube-350': 264, 'panel-150x350': 14 },
+      skipped: { 'multi wheel': 2 },
+    });
+  });
+
+  it('leaves screws out of the missing parts until a stock is entered', () => {
+    expect(missingParts({ 'screw-tube': 24 }, {})).toEqual({});
+    expect(missingParts({ 'screw-tube': 24 }, { 'screw-tube': 10 })).toEqual({ 'screw-tube': 14 });
   });
 });
 

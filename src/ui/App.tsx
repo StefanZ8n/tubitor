@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { TUBE_LENGTHS } from '../core/geometry';
+import { parseQbl } from '../core/qbl';
 import { parseQdf } from '../core/qdf';
 import { COLORS, emptyDesign, type Design } from '../core/types';
 import { translate, type MsgKey } from '../i18n';
@@ -26,16 +27,27 @@ function isDesign(value: unknown): value is Design {
 }
 
 async function openFile(file: File) {
-  const { lang, loadDesign, set } = useStore.getState();
+  const { lang, loadDesign, replaceInventory, setPrefs, set } = useStore.getState();
   const t = (k: MsgKey, vars?: Record<string, string | number>) => translate(lang, k, vars);
   try {
     const text = await file.text();
+    const skippedList = (skipped: Record<string, number>) => Object.entries(skipped).map(([type, n]) => `${n}× ${type}`).join(', ');
+    if (/\.qbl$/i.test(file.name)) {
+      const { inventory, skipped } = parseQbl(text);
+      const n = Object.values(inventory).reduce((a, b) => a + b, 0);
+      if (!n) throw new Error('empty');
+      replaceInventory(inventory);
+      setPrefs({ inventoryMode: true });
+      const list = skippedList(skipped);
+      set({ view: 'build', toast: t('stockImported', { n }) + (list ? ` ${t('importSkipped', { list })}` : '') });
+      return;
+    }
     const name = file.name.replace(/\.(qdf|(tubecraft\.|rohrwerk\.)?json)$/i, '');
     if (/\.qdf$/i.test(file.name)) {
       const { design, skipped } = parseQdf(text, name);
       if (!design.parts.length) throw new Error('empty');
       loadDesign(design);
-      const list = Object.entries(skipped).map(([type, n]) => `${n}× ${type}`).join(', ');
+      const list = skippedList(skipped);
       set({ toast: t('imported', { n: design.parts.length }) + (list ? ` ${t('importSkipped', { list })}` : '') });
     } else {
       const design: unknown = JSON.parse(text);
@@ -131,7 +143,7 @@ export function App() {
         <input
           ref={fileInput}
           type="file"
-          accept=".json,.qdf"
+          accept=".json,.qdf,.qbl"
           hidden
           onChange={(e) => {
             const file = e.target.files?.[0];
@@ -201,7 +213,7 @@ export function App() {
         <Viewport />
         {!s.design.parts.length && <div className="empty">{t('empty')}</div>}
         {s.toast && <div className="toast" role="status">{s.toast}</div>}
-        {dragging && <div className="drop">.qdf / .json</div>}
+        {dragging && <div className="drop">.qdf / .qbl / .json</div>}
       </main>
 
       <Sidebar />

@@ -81,11 +81,14 @@ export function orderedKeys(...counts: Counts[]): string[] {
   return [...CATALOG, ...[...extra].sort()];
 }
 
+/** Screws are not in imported stock lists: they only count as stock once a number is entered. */
+export const isTracked = (key: string, have: Counts) => !key.startsWith('screw-') || (have[key] ?? 0) > 0;
+
 export function missingParts(used: Counts, have: Counts): Counts {
   const missing: Counts = {};
   for (const [k, n] of Object.entries(used)) {
     const short = n - (have[k] ?? 0);
-    if (short > 0) missing[k] = short;
+    if (short > 0 && isTracked(k, have)) missing[k] = short;
   }
   return missing;
 }
