@@ -39,7 +39,11 @@ export function analyse(parts: Part[]): DesignInfo {
 
 export function partKey(p: Part): string {
   if (p.type === 'tube') return `tube-${Math.round(p.length)}`;
-  if (p.type === 'panel') return `panel-${Math.round(p.w)}x${Math.round(p.h)}${p.perforated ? '-perf' : ''}`;
+  if (p.type === 'panel') {
+    // Short side first, whichever way round the panel is stored.
+    const [short, long] = [Math.round(p.w), Math.round(p.h)].sort((a, b) => a - b);
+    return `panel-${short}x${long}${p.perforated ? '-perf' : ''}`;
+  }
   return 'roof45';
 }
 

@@ -59,7 +59,8 @@ export function parseQdf(text: string, name = ''): QdfImport {
     if (type === 'tube2') {
       design.parts.push({ ...base(), type: 'tube', length: n[9] });
     } else if (type === 'panel2') {
-      design.parts.push({ ...base(), type: 'panel', w: n[9], h: n[11], perforated: false });
+      // The file gives the size along the panel's local y axis first, then along x.
+      design.parts.push({ ...base(), type: 'panel', w: n[11], h: n[9], perforated: false });
     } else if (type === 'connector45_2') {
       design.parts.push({ ...base(), type: 'roof45', color: 'black' });
     } else if (type === 'connector3') {

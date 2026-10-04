@@ -175,13 +175,17 @@ describe('qdf import', () => {
     'tube2{2, {2., 0., 0., 2., 0., 0., 0.}, 1, 350., 0., 0}',
     'tube2{2, {2., 0., 2., 0., 0., 0., 0.}, 1, 150., 0., 0}',
     'panel2{6, {4., 0., 0., 0., 200., 200., 0.}, 1, 350., 0., 350., 0., 0}',
+    'panel2{6, {4., 0., 0., 0., 200., 500., 0.}, 1, 150., 0., 350., 0., 0}',
     'connector3{1, {4., 0., 0., 0., 0., 0., 0.}, 1, 0, 37, 26, 4095, 0}',
     'slide2{6, {4., 0., 0., 0., 0., 1200., -600.}, 1, 0}',
   ].join('\n');
 
   it('reads tubes, panels and colours', () => {
     const { design, skipped, fileConnectors } = parseQdf(sample);
-    expect(design.parts.map((p) => p.type)).toEqual(['tube', 'tube', 'tube', 'panel']);
+    expect(design.parts.map((p) => p.type)).toEqual(['tube', 'tube', 'tube', 'panel', 'panel']);
+    // A half panel lies flat: 350 along its local x axis, 150 along y.
+    expect(design.parts[4]).toMatchObject({ w: 350, h: 150 });
+    expect(countParts(design.parts)['panel-150x350']).toBe(1);
     expect(design.parts[3].color).toBe('blue');
     expect(skipped).toEqual({ slide2: 1 });
     expect(fileConnectors).toEqual([{ pos: [0, 0, 0], armCount: 3 }]);
