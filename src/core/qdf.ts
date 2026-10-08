@@ -31,7 +31,7 @@ function decodeQuat(n: number[]): Quat {
 const popcount = (n: number) => n.toString(2).replace(/0/g, '').length;
 
 // Index of the first history field for the record types whose layout we know.
-const HISTORY_START: Record<string, number> = { tube2: 11, panel2: 13, connector3: 13, connector45_2: 10 };
+const HISTORY_START: Record<string, number> = { tube2: 11, panel2: 13, connector3: 13, connector45_2: 10, bearing2: 11 };
 
 /**
  * A QDF keeps the whole undo history: every record ends with the step it was created in
@@ -86,6 +86,12 @@ export function parseQdf(text: string, name = ''): QdfImport {
       design.parts.push({ ...base(), type: 'panel', w: n[11], h: n[9], perforated: false });
     } else if (type === 'connector45_2') {
       design.parts.push({ ...base(), type: 'roof45', color: 'black' });
+    } else if (type === 'bearing2') {
+      design.parts.push({ ...base(), type: 'bearing' });
+    } else if (type === 'steering-lock2') {
+      design.parts.push({ ...base(), type: 'steeringLock' });
+    } else if (type === 'multi-wheel2') {
+      design.parts.push({ ...base(), type: 'wheel' });
     } else if (type === 'connector3') {
       fileConnectors.push({ pos: [n[5], n[6], n[7]], armCount: popcount(n[10]) });
     } else {

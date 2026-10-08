@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { autoColor, AUTO_COLORS } from './autocolor';
-import { deriveNodes, occupiedEdges, panelCells, posKey, quatFromDir, tubeEnds, v3 } from './geometry';
+import { deriveNodes, occupiedEdges, panelCells, posKey, quatFromDir, roofGeometry, tubeEnds, v3 } from './geometry';
 import { fixPanels, jointsOf } from './panels';
 import { countParts, countScrews, missingParts } from './partslist';
 import { parseQbl } from './qbl';
@@ -167,10 +167,10 @@ describe('parts and steps', () => {
 
 describe('stock list import', () => {
   it('maps part names, adds up colours and reports unknown parts', () => {
-    const text = ['6way connector, black;8', 'T connector, black;32', 'elbow, black;3', 'diagonal connector, black;8', 'tube, 35 cm, red;260', 'tube, 35 cm, blue;4', 'panel, for 15 cm x 35 cm, red;14', 'multi wheel, red;2'].join('\r\n');
+    const text = ['6way connector, black;8', 'T connector, black;32', 'elbow, black;3', 'diagonal connector, black;8', 'tube, 35 cm, red;260', 'tube, 35 cm, blue;4', 'panel, for 15 cm x 35 cm, red;14', 'multi wheel, red;2', 'bearing for multi wheel, black;2', 'casters, black;1'].join('\r\n');
     expect(parseQbl(text)).toEqual({
-      inventory: { 'conn-c6': 8, 'conn-f3': 32, 'conn-f2': 3, roof45: 8, 'tube-350': 264, 'panel-150x350': 14 },
-      skipped: { 'multi wheel': 2 },
+      inventory: { 'conn-c6': 8, 'conn-f3': 32, 'conn-f2': 3, roof45: 8, 'tube-350': 264, 'panel-150x350': 14, wheel: 2, bearing: 2 },
+      skipped: { casters: 1 },
     });
   });
 });
@@ -236,6 +236,24 @@ describe('qdf import', () => {
     expect(tubeEnds(slanted)[1].distanceTo(v3([-200, 1031.5226, -276.7774]))).toBeLessThan(0.01);
     expect(straight.stretch).toBeUndefined();
   });
+
+  it('reads wheels and lets a bearing take up a connector arm', () => {
+    const text = [
+      '0, 0;',
+      'material3{8,"blue", 2, 0.,0.,1., 0.6,0.5,0.5,7.5, 0.6,0.5,0.5,7.5, "", 0}',
+      'tube2{2, {2., 0., 2., 0., 200., 100., -200.}, 1, 350., 0., 0}',
+      'tube2{2, {0., 0., 4., 0., 200., 100., -200.}, 1, 350., 0., 0}',
+      'bearing2{1, {4., 0., 0., 0., 200., 100., -200.}, 1, 50., 0., 0}',
+      'steering-lock2{2, {4., 0., 0., 0., 200., 100., -200.}, 1, 0}',
+      'multi-wheel2{8, {4., 0., 0., 0., 250., 100., -200.}, 1, 0}',
+    ].join('\r\n');
+    const { design, skipped } = parseQdf(text);
+    expect(skipped).toEqual({});
+    expect(design.parts[4]).toMatchObject({ type: 'wheel', color: 'blue', pos: [250, 100, -200] });
+    expect(deriveNodes(design.parts).find((n) => n.key === posKey(v3([200, 100, -200])))?.kind).toBe('f3');
+    expect(countParts(design.parts)).toEqual({ 'tube-350': 2, 'conn-f3': 1, bearing: 1, 'steering-lock': 1, wheel: 1 });
+    expect(buildSteps(design.parts).flatMap((s) => s.partIds)).toHaveLength(5);
+  });
 });
 
 // Real models are copyrighted and not part of the repo: point QDF_SAMPLES_DIR at a folder
@@ -248,14 +266,17 @@ describe.skipIf(!dir || !existsSync(dir))('qdf samples', () => {
       const nodes = new Map(deriveNodes(design.parts).map((n) => [n.key, n]));
       let exact = 0;
       const diffs: string[] = [];
-      for (const c of fileConnectors) {
+      // The editor keeps a connector on a tube end that a roof adapter's pin goes into; no real part.
+      const onAdapterPin = new Set(design.parts.flatMap((p) => (p.type === 'roof45' ? [posKey(roofGeometry(p).virtualNode)] : [])));
+      const real = fileConnectors.filter((c) => !(c.armCount <= 1 && onAdapterPin.has(posKey(v3(c.pos)))));
+      for (const c of real) {
         const n = nodes.get(posKey(v3(c.pos)));
         if (n && n.arms.length === c.armCount && !n.invalid) exact++;
         else diffs.push(`${c.pos.map(Math.round)}: file ${c.armCount}, derived ${n?.arms.length ?? 'none'}${n?.invalid ? ' (invalid)' : ''}`);
       }
       const derived = [...nodes.values()].filter((n) => n.kind || n.invalid).length;
-      console.log(`${file}: ${exact}/${fileConnectors.length} connectors match, ${derived} derived, skipped ${JSON.stringify(skipped)}\n  ${diffs.join('\n  ')}`);
-      expect(exact / fileConnectors.length).toBeGreaterThan(0.85);
+      console.log(`${file}: ${exact}/${real.length} connectors match, ${derived} derived, skipped ${JSON.stringify(skipped)}\n  ${diffs.join('\n  ')}`);
+      expect(exact / real.length).toBeGreaterThan(0.85);
     });
   }
 });

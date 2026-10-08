@@ -19,6 +19,8 @@ const later = (a: Slot, b: Slot) => (a.level - b.level || a.order - b.order) > 0
 
 function tubeSlot(p: Exclude<Part, Panel>): Slot {
   if (p.type === 'roof45') return { level: Math.round(roofGeometry(p).node.y / LEVEL), phase: 'horizontal', order: ORDER.horizontal };
+  // Wheels and their bearings go on with the frame they hang on.
+  if (p.type !== 'tube') return { level: Math.round(p.pos[1] / LEVEL), phase: 'horizontal', order: ORDER.horizontal };
   const [a, b] = tubeEnds(p);
   const phase = Math.abs(a.y - b.y) < 1 ? 'horizontal' : 'upright';
   return { level: Math.round(Math.min(a.y, b.y) / LEVEL), phase, order: ORDER[phase] };

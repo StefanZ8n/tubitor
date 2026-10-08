@@ -18,7 +18,7 @@ import {
   v3,
   type PanelCell,
 } from '../core/geometry';
-import { newId, type ColorKey, type Node, type Panel, type Part, type Roof45, type Tube, type Vec3 } from '../core/types';
+import { newId, type Bearing, type ColorKey, type Node, type Panel, type Part, type Roof45, type SteeringLock, type Tube, type Vec3, type Wheel } from '../core/types';
 import { translate, partLabel } from '../i18n';
 import { GROUND_DIRS, useStore } from '../store';
 import { usePlan } from './usePlan';
@@ -37,6 +37,8 @@ const CONNECTOR = '#2b2d31';
 const HIGHLIGHT = '#ff8a00';
 const TUBE_RADIUS = 17.5;
 const PANEL_THICKNESS = 8;
+const WHEEL_RADIUS = 100;
+const WHEEL_WIDTH = 45;
 // Mouse travel in pixels below which a press still counts as a click, not a camera drag.
 const CLICK_SLOP = 4;
 
@@ -149,6 +151,46 @@ function RoofMesh({ roof, look, events }: { roof: Roof45; look: Look; events?: P
     <group {...events}>
       <Rod from={g.node} to={elbow} radius={21} look={look} />
       <Rod from={elbow} to={g.virtualNode.clone().addScaledVector(g.tubeDir, HUB / 2 + 12)} radius={21} look={look} />
+    </group>
+  );
+}
+
+const SPOKES = [0, 1, 2, 3, 4, 5].map((i) => (i * Math.PI) / 3);
+
+/** Turns about its local y axis: closed towards the connector, with a tyre, a hub and spokes on the outside. */
+function WheelMesh({ wheel, look, events }: { wheel: Wheel; look: Look; events?: PartEvents }) {
+  return (
+    <group position={wheel.pos} quaternion={quat(wheel.quat).multiply(Y_TO_X)} {...events}>
+      <mesh position-y={6 - WHEEL_WIDTH / 2}>
+        <cylinderGeometry args={[WHEEL_RADIUS - 8, WHEEL_RADIUS - 8, 12, 32]} />
+        <Surface look={look} />
+      </mesh>
+      <mesh rotation-x={Math.PI / 2}>
+        <torusGeometry args={[WHEEL_RADIUS - WHEEL_WIDTH / 4, WHEEL_WIDTH / 4, 12, 32]} />
+        <Surface look={look} />
+      </mesh>
+      <mesh>
+        <cylinderGeometry args={[30, 30, WHEEL_WIDTH, 20]} />
+        <Surface look={look} />
+      </mesh>
+      {SPOKES.map((angle) => (
+        <mesh key={angle} rotation-y={angle} position={[Math.cos(angle) * 55, 4, -Math.sin(angle) * 55]}>
+          <boxGeometry args={[60, WHEEL_WIDTH - 12, 6]} />
+          <Surface look={look} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/** The bearing is the sleeve on the connector arm that the wheel runs on; the steering lock is the plug holding the wheel from outside. */
+function AxleMesh({ part, look, events }: { part: Bearing | SteeringLock; look: Look; events?: PartEvents }) {
+  const axis = new Vector3(1, 0, 0).applyQuaternion(quat(part.quat));
+  const [from, to, radius] = part.type === 'bearing' ? [0, HUB + WHEEL_WIDTH / 2, 21] : [HUB + WHEEL_WIDTH / 2, HUB + WHEEL_WIDTH / 2 + 10, 24];
+  const at = (d: number) => v3(part.pos).addScaledVector(axis, d);
+  return (
+    <group {...events}>
+      <Rod from={at(from)} to={at(to)} radius={radius} look={look} />
     </group>
   );
 }
@@ -334,8 +376,12 @@ function Scene() {
           <TubeMesh key={p.id} tube={p} look={lookOf(p)} events={partEvents(p)} />
         ) : p.type === 'panel' ? (
           <PanelMesh key={p.id} panel={p} look={lookOf(p)} events={partEvents(p)} />
-        ) : (
+        ) : p.type === 'roof45' ? (
           <RoofMesh key={p.id} roof={p} look={lookOf(p)} events={partEvents(p)} />
+        ) : p.type === 'wheel' ? (
+          <WheelMesh key={p.id} wheel={p} look={lookOf(p)} events={partEvents(p)} />
+        ) : (
+          <AxleMesh key={p.id} part={p} look={lookOf(p)} events={partEvents(p)} />
         ),
       )}
       {visibleParts.map((p) => {

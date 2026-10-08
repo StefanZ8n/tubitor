@@ -6,7 +6,7 @@ export interface QblImport {
   skipped: Record<string, number>;
 }
 
-const CONNECTORS: Record<string, string> = {
+const NAMED: Record<string, string> = {
   '6way connector': 'conn-c6',
   '5way connector': 'conn-c5',
   '4way connector': 'conn-c4',
@@ -16,10 +16,13 @@ const CONNECTORS: Record<string, string> = {
   elbow: 'conn-f2',
   '2way connector': 'conn-s2',
   'diagonal connector': 'roof45',
+  'multi wheel': 'wheel',
+  'bearing for multi wheel': 'bearing',
+  'steering lock': 'steering-lock',
 };
 
 function keyOf(name: string): string | null {
-  if (name in CONNECTORS) return CONNECTORS[name];
+  if (name in NAMED) return NAMED[name];
   const tube = /^tube, (\d+) cm$/.exec(name);
   if (tube) return `tube-${Number(tube[1]) * 10}`;
   const panel = /^panel, for (\d+) cm x (\d+) cm$/.exec(name);

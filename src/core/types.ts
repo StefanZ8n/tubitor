@@ -32,12 +32,30 @@ export interface Panel extends PartBase {
   perforated: boolean;
 }
 
-/** 45° roof adapter, plugged into the local +x arm of the connector at `pos`. */
+/**
+ * 45° roof adapter: its socket sits on the local +x arm of the connector at `pos`,
+ * its pin goes straight into the sloped tube.
+ */
 export interface Roof45 extends PartBase {
   type: 'roof45';
 }
 
-export type Part = Tube | Panel | Roof45;
+/** Axle bearing for a wheel, plugged into the local +x arm of the connector at `pos`. */
+export interface Bearing extends PartBase {
+  type: 'bearing';
+}
+
+/** Clipped onto the bearing at `pos` to keep it from swivelling. */
+export interface SteeringLock extends PartBase {
+  type: 'steeringLock';
+}
+
+/** Centred on `pos`, turning about its local x axis. */
+export interface Wheel extends PartBase {
+  type: 'wheel';
+}
+
+export type Part = Tube | Panel | Roof45 | Bearing | SteeringLock | Wheel;
 
 export interface Design {
   format: 'tubitor-design';

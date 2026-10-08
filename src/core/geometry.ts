@@ -88,6 +88,9 @@ export function deriveNodes(parts: Part[]): Node[] {
     addArm(g.node, g.arm);
   }
   for (const p of parts) {
+    if (p.type === 'bearing') addArm(v3(p.pos), X.clone().applyQuaternion(quat(p.quat)));
+  }
+  for (const p of parts) {
     if (p.type !== 'tube') continue;
     const [start, end] = tubeEnds(p);
     const dir = tubeDir(p);
@@ -194,5 +197,6 @@ export function panelCells(parts: Part[]): PanelCell[] {
 export function touchedNodeKeys(p: Part): string[] {
   if (p.type === 'tube') return tubeEnds(p).map(posKey);
   if (p.type === 'roof45') return [posKey(roofGeometry(p).node)];
+  if (p.type === 'bearing') return [posKey(v3(p.pos))];
   return [];
 }

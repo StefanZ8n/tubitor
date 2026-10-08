@@ -23,6 +23,9 @@ export const CATALOG = [
   'panel-350x350',
   'panel-150x350',
   'panel-350x350-perf',
+  'wheel',
+  'bearing',
+  'steering-lock',
 ] as const;
 
 const SCREWS_PER_PANEL = 4;
@@ -44,7 +47,8 @@ export function partKey(p: Part): string {
     const [short, long] = [Math.round(p.w), Math.round(p.h)].sort((a, b) => a - b);
     return `panel-${short}x${long}${p.perforated ? '-perf' : ''}`;
   }
-  return 'roof45';
+  if (p.type === 'steeringLock') return 'steering-lock';
+  return p.type;
 }
 
 export const nodeKey = (n: Node) => (n.kind ? `conn-${n.kind}` : null);
