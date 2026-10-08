@@ -30,11 +30,32 @@ function decodeQuat(n: number[]): Quat {
 
 const popcount = (n: number) => n.toString(2).replace(/0/g, '').length;
 
+// Index of the first history field for the record types whose layout we know.
+const HISTORY_START: Record<string, number> = { tube2: 11, panel2: 13, connector3: 13, connector45_2: 10 };
+
+/**
+ * A QDF keeps the whole undo history: every record ends with the step it was created in
+ * and, once removed, the step it was deleted in. Only records alive at `step` are on screen.
+ */
+function aliveAt(type: string, fields: string[], n: number[], step: number): boolean {
+  let start = HISTORY_START[type];
+  if (start === undefined) {
+    // Unknown types: placement and flag first, then any decimal sizes, then the history.
+    start = 9;
+    while (start < fields.length && fields[start].includes('.')) start++;
+  }
+  const [created = 0, deleted = Infinity] = n.slice(start);
+  return created <= step && deleted > step;
+}
+
 export function parseQdf(text: string, name = ''): QdfImport {
   const design = emptyDesign(name);
   const skipped: Record<string, number> = {};
   const fileConnectors: QdfImport['fileConnectors'] = [];
   const materials = new Map<number, ColorKey>();
+  // The first line holds the undo step the file was saved at and the last step in the history.
+  const header = /^\s*(\d+)\s*,\s*\d+\s*;/.exec(text);
+  const step = header ? Number(header[1]) : Infinity;
 
   for (const raw of text.split(/\r?\n/)) {
     const m = /^([a-z0-9_-]+)\{(.*)\}\s*$/i.exec(raw.trim());
@@ -47,7 +68,7 @@ export function parseQdf(text: string, name = ''): QdfImport {
       materials.set(n[0], COLOR_NAMES[fields[1].replace(/"/g, '')] ?? 'grey');
       continue;
     }
-    if (type === 'camera2') continue;
+    if (type === 'camera2' || !aliveAt(type, fields, n, step)) continue;
 
     const base = () => ({
       id: newId(),

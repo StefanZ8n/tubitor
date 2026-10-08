@@ -201,6 +201,28 @@ describe('qdf import', () => {
     const ends = design.parts.slice(0, 3).map((t) => tubeEnds(t as Tube)[1].toArray().map((c) => Math.round(c) + 0));
     expect(ends).toEqual([[400, 0, 0], [0, 400, 0], [0, 0, -200]]);
   });
+
+  it('drops parts that were deleted or not yet created at the saved undo step', () => {
+    const text = [
+      '5, 7;',
+      'tube2{2, {4., 0., 0., 0., 0., 0., 0.}, 1, 350., 0., 0}',
+      'tube2{2, {2., 0., 0., 2., 0., 0., 0.}, 1, 350., 0., 0, 3}',
+      'tube2{2, {2., 0., 2., 0., 0., 0., 0.}, 1, 150., 0., 2, 6}',
+      'tube2{2, {2., 0., 2., 0., 400., 0., 0.}, 1, 150., 0., 6}',
+      'panel2{6, {4., 0., 0., 0., 200., 200., 0.}, 1, 350., 0., 350., 0., 4, 5}',
+      'connector45_2{1, {2., 0., 2., 0., 0., 0., 0.}, 1, 0, 0}',
+      'connector45_2{1, {2., 0., 2., 0., 400., 0., 0.}, 1, 1, 1, 2}',
+      'connector3{1, {4., 0., 0., 0., 0., 0., 0.}, 1, 0, 37, 26, 4095, 0, 2}',
+      'connector3{1, {4., 0., 0., 0., 0., 0., 0.}, 1, 0, 5, 58, 4095, 3}',
+      'clamp2{2, {0., 0., 4., 0., 740., 600., -400.}, 1, 0}',
+      'bearing2{1, {4., 0., 0., 0., 400., 800., 1200.}, 1, 50., 0., 1, 4}',
+    ].join('\r\n');
+    const { design, skipped, fileConnectors } = parseQdf(text);
+    expect(design.parts.map((p) => [p.type, p.pos[0]])).toEqual([['tube', 0], ['tube', 0], ['roof45', 0]]);
+    expect(design.parts.map((p) => (p.type === 'tube' ? p.length : 0))).toEqual([350, 150, 0]);
+    expect(fileConnectors).toEqual([{ pos: [0, 0, 0], armCount: 2 }]);
+    expect(skipped).toEqual({ clamp2: 1 });
+  });
 });
 
 // Real models are copyrighted and not part of the repo: point QDF_SAMPLES_DIR at a folder
