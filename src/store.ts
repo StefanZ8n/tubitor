@@ -10,15 +10,14 @@ export const GROUND_DIRS: Vec3[] = [
   [0, 0, 1],
 ];
 
-const DESIGN_KEY = 'tubecraft.design';
-const INVENTORY_KEY = 'tubecraft.inventory';
-const PREFS_KEY = 'tubecraft.prefs';
+const DESIGN_KEY = 'tubitor.design';
+const INVENTORY_KEY = 'tubitor.inventory';
+const PREFS_KEY = 'tubitor.prefs';
 const HISTORY_LIMIT = 200;
 
 function load<T>(key: string, fallback: T): T {
   try {
-    // Falls back to keys written under the project's first working title.
-    const raw = localStorage.getItem(key) ?? localStorage.getItem(key.replace('tubecraft.', 'rohrwerk.'));
+    const raw = localStorage.getItem(key);
     return raw ? (JSON.parse(raw) as T) : fallback;
   } catch {
     return fallback;

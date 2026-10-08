@@ -24,8 +24,7 @@ const SWATCH: Record<string, string> = { red: '#d42a2a', green: '#1f9440', blue:
 
 function isDesign(value: unknown): value is Design {
   const d = value as Design;
-  // 'rohrwerk-design' was the format name under the first working title.
-  return !!d && ['tubecraft-design', 'rohrwerk-design'].includes(d.format) && Array.isArray(d.parts);
+  return !!d && d.format === 'tubitor-design' && Array.isArray(d.parts);
 }
 
 async function openFile(file: File) {
@@ -44,7 +43,7 @@ async function openFile(file: File) {
       set({ view: 'build', toast: t('stockImported', { n }) + (list ? ` ${t('importSkipped', { list })}` : '') });
       return;
     }
-    const name = file.name.replace(/\.(qdf|(tubecraft\.|rohrwerk\.)?json)$/i, '');
+    const name = file.name.replace(/\.(qdf|(tubitor\.)?json)$/i, '');
     if (/\.qdf$/i.test(file.name)) {
       const { design, skipped } = parseQdf(text, name);
       if (!design.parts.length) throw new Error('empty');
@@ -54,7 +53,7 @@ async function openFile(file: File) {
     } else {
       const design: unknown = JSON.parse(text);
       if (!isDesign(design)) throw new Error('format');
-      loadDesign({ ...design, format: 'tubecraft-design' });
+      loadDesign(design);
     }
   } catch {
     set({ toast: t('importFailed') });
@@ -65,7 +64,7 @@ function download(design: Design, fallbackName: string) {
   const url = URL.createObjectURL(new Blob([JSON.stringify(design)], { type: 'application/json' }));
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${design.name || fallbackName}.tubecraft.json`;
+  a.download = `${design.name || fallbackName}.tubitor.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -137,7 +136,7 @@ export function App() {
       }}
     >
       <header className="topbar">
-        <strong className="brand">TubeCraft</strong>
+        <strong className="brand">Tubitor</strong>
         <input className="name" value={s.design.name} placeholder={t('untitled')} onChange={(e) => s.setName(e.target.value)} />
         <button onClick={() => (!s.design.parts.length || confirm(t('confirmNew'))) && s.loadDesign(emptyDesign())}>{t('new')}</button>
         <button onClick={() => fileInput.current?.click()}>{t('open')}</button>

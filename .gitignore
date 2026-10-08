@@ -3,3 +3,4 @@ dist
 *.qdf
 *.qbl
 .env
+testfiles/

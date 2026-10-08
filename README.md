@@ -1,4 +1,4 @@
-# TubeCraft
+# Tubitor
 
 Web-basierter 3D-Designer für Rohr-Stecksysteme, kompatibel mit QUADRO®-Bauteilen.
 Inoffizielles Hobby-Projekt, nicht mit dem Hersteller verbunden. Keine Statik- oder Sicherheitsprüfung.
@@ -15,7 +15,7 @@ Version 0.1.0 läuft komplett im Browser, ohne Backend.
 - Bauplan Schritt für Schritt, Ebene für Ebene; Platten erst, wenn ihr Rahmen geschlossen ist
 - Import der Bestandsliste (`.qbl`) aus dem QUADRO 3D-Programm als eigene Teileliste
 - QDF-Import (Rohre, Platten, 45°-Dachkupplungen; Spezialteile werden übersprungen und gemeldet)
-- Speichern im Browser und als Datei (`.tubecraft.json`), Rückgängig/Wiederholen, Deutsch/Englisch
+- Speichern im Browser und als Datei (`.tubitor.json`), Rückgängig/Wiederholen, Deutsch/Englisch
 
 ## Bedienung
 

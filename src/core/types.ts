@@ -35,7 +35,7 @@ export interface Roof45 extends PartBase {
 export type Part = Tube | Panel | Roof45;
 
 export interface Design {
-  format: 'tubecraft-design';
+  format: 'tubitor-design';
   version: 1;
   name: string;
   tags: string[];
@@ -55,7 +55,7 @@ export interface Node {
 }
 
 export function emptyDesign(name = ''): Design {
-  return { format: 'tubecraft-design', version: 1, name, tags: [], parts: [] };
+  return { format: 'tubitor-design', version: 1, name, tags: [], parts: [] };
 }
 
 let idCounter = 0;
