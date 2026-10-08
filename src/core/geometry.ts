@@ -26,9 +26,12 @@ export function tubeDir(t: Tube): Vector3 {
   return X.clone().applyQuaternion(quat(t.quat));
 }
 
+/** Distance between the two nodes a tube joins. */
+export const tubeSpan = (t: Tube) => t.length + HUB + (t.stretch ?? 0);
+
 export function tubeEnds(t: Tube): [Vector3, Vector3] {
   const start = v3(t.pos);
-  return [start, start.clone().addScaledVector(tubeDir(t), t.length + HUB)];
+  return [start, start.clone().addScaledVector(tubeDir(t), tubeSpan(t))];
 }
 
 export function roofGeometry(r: Roof45) {

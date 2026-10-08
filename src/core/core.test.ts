@@ -223,6 +223,19 @@ describe('qdf import', () => {
     expect(fileConnectors).toEqual([{ pos: [0, 0, 0], armCount: 2 }]);
     expect(skipped).toEqual({ clamp2: 1 });
   });
+
+  it('ends a squeezed roof tube at the connector the file puts there', () => {
+    const text = [
+      '0, 0;',
+      'connector45_2{1, {2., 0., 2., 0., -200., 800., -400.}, 1, 0, 0}',
+      'tube2{4, {0.292893218813, 1.707106781187, 0.292893218813, 1.707106781187, -200., 825.455844122716, -482.844155877284}, 0, 250., -8.57762336731, 0}',
+      'tube2{2, {2., 0., 2., 0., -200., 0., 0.}, 1, 350., 0., 0}',
+    ].join('\r\n');
+    const [, slanted, straight] = parseQdf(text).design.parts as Tube[];
+    expect(slanted.stretch).toBeCloseTo(-8.5776);
+    expect(tubeEnds(slanted)[1].distanceTo(v3([-200, 1031.5226, -276.7774]))).toBeLessThan(0.01);
+    expect(straight.stretch).toBeUndefined();
+  });
 });
 
 // Real models are copyrighted and not part of the repo: point QDF_SAMPLES_DIR at a folder

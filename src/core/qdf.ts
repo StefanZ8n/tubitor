@@ -78,7 +78,9 @@ export function parseQdf(text: string, name = ''): QdfImport {
     });
 
     if (type === 'tube2') {
-      design.parts.push({ ...base(), type: 'tube', length: n[9] });
+      // Rounding noise aside, only sloped roof tubes carry a stretch.
+      const stretch = Math.abs(n[10]) > 1e-6 ? { stretch: n[10] } : {};
+      design.parts.push({ ...base(), type: 'tube', length: n[9], ...stretch });
     } else if (type === 'panel2') {
       // The file gives the size along the panel's local y axis first, then along x.
       design.parts.push({ ...base(), type: 'panel', w: n[11], h: n[9], perforated: false });

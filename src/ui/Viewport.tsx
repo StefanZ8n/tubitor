@@ -14,6 +14,7 @@ import {
   roofGeometry,
   tubeEdgeKeys,
   tubeEnds,
+  tubeSpan,
   v3,
   type PanelCell,
 } from '../core/geometry';
@@ -119,7 +120,7 @@ function Rod({ from, to, radius, look }: { from: Vector3; to: Vector3; radius: n
 
 function TubeMesh({ tube, look, events }: { tube: Tube; look: Look; events?: PartEvents }) {
   const q = quat(tube.quat);
-  const mid = v3(tube.pos).addScaledVector(new Vector3(1, 0, 0).applyQuaternion(q), (tube.length + HUB) / 2);
+  const mid = v3(tube.pos).addScaledVector(new Vector3(1, 0, 0).applyQuaternion(q), tubeSpan(tube) / 2);
   return (
     <mesh position={mid} quaternion={q.multiply(Y_TO_X)} scale={[1, tube.length, 1]} {...events}>
       <cylinderGeometry args={[TUBE_RADIUS, TUBE_RADIUS, 1, 20]} />

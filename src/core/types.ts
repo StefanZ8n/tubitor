@@ -17,6 +17,11 @@ interface PartBase {
 export interface Tube extends PartBase {
   type: 'tube';
   length: number;
+  /**
+   * Millimetres the far node sits further away (or, if negative, closer) than length + hub.
+   * The QUADRO editor squeezes sloped roof tubes this way to make the roof close.
+   */
+  stretch?: number;
 }
 
 /** Centred on `pos`, lies in its local xy plane (w along x, h along y). */

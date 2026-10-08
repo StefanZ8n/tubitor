@@ -8,7 +8,9 @@ export type Counts = Record<string, number>;
 export const CATALOG = [
   'tube-750',
   'tube-350',
+  'tube-250',
   'tube-150',
+  'tube-100',
   'conn-c6',
   'conn-c5',
   'conn-c4',
