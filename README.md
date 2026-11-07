@@ -8,6 +8,10 @@ Unofficial hobby project, not affiliated with the manufacturer. No structural or
 
 Version 0.1.0 runs entirely in the browser, without a backend.
 
+![Build mode: 3D editor with parts list](docs/screenshot-build.png)
+
+![Instructions mode: step-by-step building plan](docs/screenshot-instructions.png)
+
 ## Features
 
 - 3D editor on a 20 cm grid: tubes (75, 35 and 15 cm), panels, half panels, perforated panels
